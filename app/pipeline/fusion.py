@@ -8,7 +8,7 @@ import openai
 from app.core.config import settings
 from app.pipeline.visual import VisualAnalysisResult
 from app.pipeline.audio import TranscriptionResult
-from app.schemas.sumary import VideoSummary, KeyMoment
+from app.schemas.summary import VideoSummary, KeyMoment
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 # Define the structured output schema
-class KeyMoment(SaseModel):
+class KeyMoment(BaseModel):
     timestamp_seconds: float
     description: str
 
