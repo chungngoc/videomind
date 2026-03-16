@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     clip_model_name: str = "openai/clip-vit-base-patch32"
     blip_model_name: str = "Salesforce/blip2-opt-2.7b"
     llm_provider: str = "ollama"  # Options: openai, ollama
-    llm_model: str = "llama3-8b"  # For Ollama: llama3-8b, llama3-16b, llama3-70b
+    llm_model: str = "llama3.2:1b"  # For Ollama: llama3.2:1b, llama3.2:7b, llama3.2:70b
 
     # OpenAI (optional fallback)
     openai_api_key: str = ""
