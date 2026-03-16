@@ -1,7 +1,6 @@
 import json
 import logging
 import time
-from pathlib import Path
 
 import openai
 
@@ -45,6 +44,7 @@ Return ONLY a valid JSON object with this exact structure:
 Return only the JSON - na markdown, no explanation, no code blocks.
 """.strip()
 
+
 class FusionPipeline:
     """
     Fuse transcript + visual analysis into a structured summary using an LLM.
@@ -61,11 +61,10 @@ class FusionPipeline:
     def _get_ollama_client(self):
         if self._client is None:
             self._client = openai.OpenAI(
-                base_url="http:/localhost:11434/v1",
-                api_key="ollama"
+                base_url="http:/localhost:11434/v1", api_key="ollama"
             )
         return self._client
-    
+
     def _get_openai_client(self):
         if self._client is None:
             self._client = openai.OpenAI(api_key=settings.openai_api_key)
@@ -82,22 +81,17 @@ class FusionPipeline:
     def _build_transcript_context(self, transcription: TranscriptionResult) -> str:
         if not transcription.segments:
             return transcription.full_text or "No speech detected."
-        lines = [
-            f"[{s.start}s - {s.end}s] {s.text}" for s in transcription.segments
-        ]
+        lines = [f"[{s.start}s - {s.end}s] {s.text}" for s in transcription.segments]
 
         return "\n".join(lines)
 
     def _build_visual_context(self, visual: VisualAnalysisResult) -> str:
         if not visual.key_frames:
             return "No visual frames available"
-        
-        lines = [
-            f"[{f.timestamp_seconds}s] {f.caption}"
-            for f in visual.key_frames
-        ]
+
+        lines = [f"[{f.timestamp_seconds}s] {f.caption}" for f in visual.key_frames]
         return "\n".join(lines)
-    
+
     ### LLM call
 
     def _call_llm(self, prompt: str) -> str:
@@ -108,7 +102,7 @@ class FusionPipeline:
             temperature=0.3,
         )
         return response.choices[0].message.content.strip()
-    
+
     ### JSON parsing
     def _parse_response(self, raw: str) -> VideoSummary:
         try:
@@ -118,11 +112,9 @@ class FusionPipeline:
                 clean = clean.split("```")[1]
                 if clean.startswith("json"):
                     clean = clean[4:]
-            
+
             data = json.loads(clean.strip())
-            key_moments = [
-                KeyMoment(**m) for m in data.get("key_moments",[])
-            ]
+            key_moments = [KeyMoment(**m) for m in data.get("key_moments", [])]
 
             return VideoSummary(
                 title=data.get("title", "Untitled"),
@@ -132,7 +124,7 @@ class FusionPipeline:
                 language=data.get("language", "unknown"),
                 sentiment=data.get("sentiment", "neutral"),
                 transcript_summary=data.get("transcript_summary", ""),
-                visual_summary=data.get("visual_summary", "")
+                visual_summary=data.get("visual_summary", ""),
             )
         except (json.JSONDecodeError, KeyError) as e:
             logger.warning(f"Failed to parse LLM response: {e}")
@@ -144,16 +136,16 @@ class FusionPipeline:
                 language="unknown",
                 sentiment="neutral",
                 transcript_summary=raw,
-                visual_summary=""
+                visual_summary="",
             )
-    
+
     # Public API
     def summarize(
         self,
         transcription: TranscriptionResult,
         visual: VisualAnalysisResult,
     ) -> VideoSummary:
-        """ Fuse transcript _ visual analysis into a structured summary."""
+        """Fuse transcript _ visual analysis into a structured summary."""
         logger.info(f"Starting fusion - provider: {self.provider}, model: {self.model}")
         start = time.time()
 
