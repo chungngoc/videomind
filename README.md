@@ -39,7 +39,7 @@ Video → Preprocessing → ┌─ Whisper (audio)
 - Python 3.10+
 - ffmpeg installed on your system
 
-### Setuo
+### Setup
 ```bash
 git clone https://github.com/chungngoc/videomind.git
 cd videomind
