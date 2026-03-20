@@ -1,0 +1,26 @@
+{
+  "name": "VideoMind",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install ffmpeg -y && make setup && echo 'source /workspaces/videomind/venv/bin/activate' >> ~/.bashrc",
+  "forwardPorts": [8000, 7860, 5000, 11434],
+  "portsAttributes": {
+    "8000": {"label": "FastAPI", "onAutoForward": "notify"},
+    "7860": {"label": "Gradio", "onAutoForward": "notify"},
+    "5000": {"label": "MLflow", "onAutoForward": "notify"},
+    "11434": {"label": "Ollama", "onAutoForward": "silent"}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}
