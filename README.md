@@ -72,3 +72,13 @@ videomind/
 ├── tests/              # Pytest suite
 └── .github/workflows/  # CI/CD
 ```
+
+## Demo
+
+Download a sample video to test:
+- [Sample Video](https://www.youtube.com/watch?v=-moW9jvvMr4)
+- Or use your own MP4 file
+
+![VideoMind Demo](docs/demo.png) 
+
+> Summarizing a 1-minute English video — Whisper transcription + CLIP visual analysis + LLaMA 3.2 fusion

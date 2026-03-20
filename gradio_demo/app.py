@@ -95,18 +95,18 @@ def run_summarize(
         summary_text = summary_text = f"""
         ## {summary.title}
 
-        **Overview**
+        #### Overview
         {summary.overview}
 
         **Language:** {summary.language} | **Sentiment:** {summary.sentiment}
 
-        **Topics**
+        #### Topics
         {", ".join(summary.topics)}
 
-        **Transcript Summary**
+        #### Transcript Summary
         {summary.transcript_summary}
 
-        **Visual Summary**
+        #### Visual Summary
         {summary.visual_summary}
         """.strip()
 
