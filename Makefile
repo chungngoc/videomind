@@ -88,6 +88,11 @@ format:
 check: lint format test
 	@echo "All checks passed!"
 
+# MLflow
+mlflow:
+	$(VENV_BIN)/mlflow ui --host 0.0.0.0 --port 5000 --backend-store-uri ./mlruns > mlflow.log 2>&1 &
+	@echo "MLflow UI running at http://localhost:5000 (logs in mlflow.log)"
+	
 # Docker
 docker-build:
 	docker build -t videomind:latest .

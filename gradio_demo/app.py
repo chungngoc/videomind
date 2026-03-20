@@ -10,6 +10,9 @@ from app.pipeline.preprocessing import VideoPreprocessor
 from app.pipeline.audio import AudioPipeline, TranscriptionResult
 from app.pipeline.visual import VisualPipeline
 from app.pipeline.fusion import FusionPipeline
+from mlops.mlflow.mlflow_tracker import MLflowTracker
+
+tracker = MLflowTracker()
 
 
 # Pipeline runners
@@ -40,57 +43,64 @@ def run_summarize(
     try:
         video_path = Path(video_path)
 
-        # Preprocessing
-        progress(0.1, desc="Extracting frames and audio...")
-        preprocessor = VideoPreprocessor()
-        preprocessor.frame_sample_rate = frame_sample_rate
-        metadata = preprocessor.process(video_path=video_path)
+        with tracker.start_run(video_filename=video_path.name):
+            # Preprocessing
+            progress(0.1, desc="Extracting frames and audio...")
+            preprocessor = VideoPreprocessor()
+            preprocessor.frame_sample_rate = frame_sample_rate
+            metadata = preprocessor.process(video_path=video_path)
+            tracker.log_video_params(metadata)
 
-        meta_text = (
-            f"**Filename:** {metadata.filename}\n"
-            f"**Duration:** {metadata.duration_seconds}s\n"
-            f"**FPS:** {metadata.fps}\n"
-            f"**Resolution:** {metadata.width}x{metadata.height}\n"
-            f"**Frames sampled:** {len(metadata.sampled_frame_paths)}"
-        )
-
-        # Transcription
-        progress(0.3, desc="Trancribing audio with Whisper...")
-        if metadata.audio_path:
-            audio_pipeline = AudioPipeline()
-            transcription = audio_pipeline.transcribe(metadata.audio_path)
-            transcript_text = transcription.full_text or "No speech detected"
-        else:
-            transcription = TranscriptionResult(
-                full_text="",
-                segments=[],
-                language="unknown",
-                duration_seconds=0.0,
-                processing_time_seconds=0.0,
+            meta_text = (
+                f"**Filename:** {metadata.filename}\n"
+                f"**Duration:** {metadata.duration_seconds}s\n"
+                f"**FPS:** {metadata.fps}\n"
+                f"**Resolution:** {metadata.width}x{metadata.height}\n"
+                f"**Frames sampled:** {len(metadata.sampled_frame_paths)}"
             )
-            transcript_text = "No audio track found."
 
-        # Visual analysis
-        progress(0.6, desc="Analyzing frames with CLIP...")
-        visual_pipeline = VisualPipeline(use_blip=use_blip)
-        visual = visual_pipeline.analyze(
-            frame_paths=metadata.sampled_frame_paths,
-            fps=metadata.fps,
-            top_k_frames=top_k_frames,
-        )
-        visual_text = "\n".join(
-            [f"**[{f.timestamp_seconds}s]**" for f in visual.key_frames]
-        )
+            # Transcription
+            progress(0.3, desc="Trancribing audio with Whisper...")
+            if metadata.audio_path:
+                audio_pipeline = AudioPipeline()
+                transcription = audio_pipeline.transcribe(metadata.audio_path)
+                transcript_text = transcription.full_text or "No speech detected"
+            else:
+                transcription = TranscriptionResult(
+                    full_text="",
+                    segments=[],
+                    language="unknown",
+                    duration_seconds=0.0,
+                    processing_time_seconds=0.0,
+                )
+                transcript_text = "No audio track found."
+            tracker.log_transcription_metrics(transcription)
 
-        # LLM Fusion
-        progress(0.85, desc="Generating summary with LLM...")
-        fusion = FusionPipeline()
-        fusion.provider = llm_provider
-        fusion.model = llm_model
-        summary = fusion.summarize(transcription=transcription, visual=visual)
+            # Visual analysis
+            progress(0.6, desc="Analyzing frames with CLIP...")
+            visual_pipeline = VisualPipeline(use_blip=use_blip)
+            visual = visual_pipeline.analyze(
+                frame_paths=metadata.sampled_frame_paths,
+                fps=metadata.fps,
+                top_k_frames=top_k_frames,
+            )
+            visual_text = "\n".join(
+                [f"**[{f.timestamp_seconds}s]**" for f in visual.key_frames]
+            )
+            tracker.log_visual_metrics(visual)
 
-        # Format outputs
-        progress(1.0, desc="Done!")
+            # LLM Fusion
+            progress(0.85, desc="Generating summary with LLM...")
+            fusion = FusionPipeline()
+            fusion.provider = llm_provider
+            fusion.model = llm_model
+            summary = fusion.summarize(transcription=transcription, visual=visual)
+
+            tracker.log_summary_metrics(summary, total_processing_s=0.0)
+            tracker.log_summary_artifact(summary, video_id=metadata.video_id)
+
+            # Format outputs
+            progress(1.0, desc="Done!")
 
         summary_text = summary_text = f"""
         ## {summary.title}

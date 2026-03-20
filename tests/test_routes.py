@@ -4,6 +4,7 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from unittest.mock import patch
 from pathlib import Path
+import mlflow
 
 from app.main import app
 from app.schemas.summary import VideoSummary, KeyMoment
@@ -98,6 +99,16 @@ def mock_summary() -> VideoSummary:
 
 
 ### Tests
+@pytest.fixture(autouse=True)
+def cleanup_mlflow():
+    """End any active MLflow run before and after each test."""
+    if mlflow.active_run():
+        mlflow.end_run()
+    yield
+    if mlflow.active_run():
+        mlflow.end_run()
+
+
 @pytest.mark.asyncio
 async def test_health():
     async with AsyncClient(

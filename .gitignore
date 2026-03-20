@@ -9,6 +9,10 @@ __pycache__/
 # Video
 *.mp4
 
+# MLflow
+mlflow.*
+mlruns/
+
 # Distribution / packaging
 .Python
 build/

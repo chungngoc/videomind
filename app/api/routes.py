@@ -11,9 +11,11 @@ from app.pipeline.audio import AudioPipeline, TranscriptionResult
 from app.pipeline.visual import VisualPipeline
 from app.pipeline.fusion import FusionPipeline
 from app.schemas.responses import SummarizeResponse, ErrorResponse
+from mlops.mlflow.mlflow_tracker import MLflowTracker
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+tracker = MLflowTracker()
 
 ALLOWED_EXTENSIONS = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
 
@@ -57,10 +59,21 @@ async def summarize_video(
         raise HTTPException(status_code=500, detail=f"Failed to save file: {e}")
 
     try:
+        with tracker.start_run(video_filename=file.filename):
+            # Params
+            tracker.log_model_params(
+                whisper_model=settings.whisper_model_size,
+                clip_model=settings.clip_model_name,
+                llm_provider=llm_provider,
+                llm_model=llm_model,
+                use_blip=use_blip,
+            )
+
         # Preprocessing
         preprocessor = VideoPreprocessor()
         preprocessor.frame_sample_rate = frame_sample_rate
         metadata = preprocessor.process(upload_path)
+        tracker.log_video_params(metadata)
 
         # Audio transcription
         audio_pipeline = AudioPipeline()
@@ -69,6 +82,7 @@ async def summarize_video(
             if metadata.audio_path
             else _empty_transcription()
         )
+        tracker.log_transcription_metrics(transcription)
 
         # Visual analysis
         visual_pipeline = VisualPipeline(use_blip=use_blip)
@@ -77,6 +91,7 @@ async def summarize_video(
             fps=metadata.fps,
             top_k_frames=top_k_frames,
         )
+        tracker.log_visual_metrics(visual)
 
         # LLM fusion
         fusion = FusionPipeline()
@@ -85,6 +100,8 @@ async def summarize_video(
         summary = fusion.summarize(transcription, visual)
 
         elapsed = round(time.time() - start, 2)
+        tracker.log_summary_metrics(summary=summary, total_processing_s=elapsed)
+        tracker.log_summary_artifact(summary=summary, video_id=metadata.video_id)
 
         return SummarizeResponse(
             video_id=metadata.video_id,
