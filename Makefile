@@ -81,9 +81,9 @@ test-v:
 
 # Code quality
 lint:
-	$(VENV_BIN)/ruff check app/ tests/
+	$(VENV_BIN)/ruff check app/ tests/ gradio_demo/
 format:
-	$(VENV_BIN)/ruff format app/ tests/
+	$(VENV_BIN)/ruff format app/ tests/ gradio_demo/
 	$(VENV_BIN)/ruff check --fix app/ tests/
 check: lint format test
 	@echo "All checks passed!"

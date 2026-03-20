@@ -23,6 +23,7 @@ class Settings(BaseSettings):
 
     # OpenAI (optional fallback)
     openai_api_key: str = ""
+    ollama_base_url: str = "http://127.0.0.1:11434"
 
     # Processing
     frame_sample_rate: int = 1  # Extract 1 frame per second

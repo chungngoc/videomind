@@ -112,7 +112,7 @@ class VisualPipeline:
 
         analyses = []
         for i, frame_path in enumerate(frame_paths):
-            timestamp = i / fps
+            timestamp = round(i / fps, 2)
             analysis = self._analyze_frame(frame_path, timestamp, labels)
             analyses.append(analysis)
 

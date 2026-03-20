@@ -61,7 +61,7 @@ class FusionPipeline:
     def _get_ollama_client(self):
         if self._client is None:
             self._client = openai.OpenAI(
-                base_url="http:/localhost:11434/v1", api_key="ollama"
+                base_url=f"{settings.ollama_base_url}/v1", api_key="ollama"
             )
         return self._client
 
