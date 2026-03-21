@@ -1,0 +1,73 @@
+version: "3.9"
+
+services:
+  # Ollama - LLM server
+  ollama:
+    image: ollama/ollama:latest
+    container_name: videomind-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      # Persist downloaded models between restarts
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+  
+  # FastAPI - REST service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: videomind-api
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=production
+      - LLM_PROVIDER=ollama
+      - LLM_MODEL=llama3.2:1b
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WHISPER_MODEL_SIZE=base
+    volumes:
+      # Persist uploads and outputs
+      - ./data:/tmp/videomind
+      # Persist MLflow runs
+      - ./mlruns:/app/mlruns
+    depends_on:
+      ollama:
+        condition: service_started
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+  
+  # Gradio - Demo UI
+  gradio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: videomind-gradio
+    ports:
+      - "7860:7860"
+    environment:
+      - APP_ENV=production
+      - LLM_PROVIDER=ollama
+      - LLM_MODEL=llama3.2:1b
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WHISPER_MODEL_SIZE=base
+    volumes:
+      - ./data:/tmp/videomind
+      - ./mlruns:/app/mlruns
+    depends_on:
+      ollama:
+        condition: service_started #service_healthy
+    restart: unless-stopped
+    command: python gradio_demo/app.py
+
+# Volumes
+volumes:
+  ollama_data:
+
+

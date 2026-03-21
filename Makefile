@@ -101,6 +101,20 @@ docker-run:
 docker-stop:
 	docker stop videomind && docker rm videomind
 
+# Docker Compose
+compose-up:
+	docker compose up --build -d
+	@echo "Services starting..."
+	@echo "API:    http://localhost:8000"
+	@echo "Gradio: http://localhost:7860"
+	@echo "MLflow: http://localhost:5000"
+compose-down:
+	docker compose down
+compose-logs:
+	docker compose logs -f
+compose-ps:
+	docker compose ps
+
 # Clean
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
