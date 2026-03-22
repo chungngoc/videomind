@@ -4,9 +4,23 @@
 PYTHON := python
 VENV := venv
 VENV_BIN := $(VENV)/bin
-PIP := $(VENV_BIN)/pip
-UVICORN := $(VENV_BIN)/uvicorn
-PYTEST := $(VENV_BIN)/pytest
+
+# Auto-detect: use venv if it exists, otherwise use system Python
+# This makes Makefile work both locally (with venv) and in CI (without venv)
+ifeq ($(wildcard $(VENV_BIN)/pip),)
+    # venv doesn't exist — use system binaries (CI environment)
+    PIP     := pip
+    PYTEST  := pytest
+    RUFF    := ruff
+    UVICORN := uvicorn
+else
+    # venv exists — use venv binaries (local environment)
+    PIP     := $(VENV_BIN)/pip
+    PYTEST  := $(VENV_BIN)/pytest
+    RUFF    := $(VENV_BIN)/ruff
+    UVICORN := $(VENV_BIN)/uvicorn
+endif
+
 APP := app.main:app
 HOST := 0.0.0.0
 PORT := 8000
