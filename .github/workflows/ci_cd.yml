@@ -12,6 +12,7 @@ on:
           - "requirements.txt"
           - "Dockerfile"
           - "Makefile"
+          - ".github/workflows/**"
     pull_request:
         branches: ["main"]
 
