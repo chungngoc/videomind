@@ -1,4 +1,6 @@
-# videomind
+# VideoMind - Video Summarization 🎬
+[![CI/CD](https://github.com/chungngoc/videomind/actions/workflows/ci_cd.yml/badge.svg)](https://github.com/chungngoc/videomind/actions/workflows/ci_cd.yml)
+
 Multimodal video summarizer that fuses **speech**, **visuals**, and **LLM reasoning**
 into a single structured summary.
 
