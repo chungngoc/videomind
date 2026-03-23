@@ -66,13 +66,12 @@ setup:
 	$(PYTHON) -m venv $(VENV)
 	$(PIP) install --upgrade pip
 	$(PIP) install -r requirements.txt
-	$(PIP) install -e .
 	@echo "Setup complete. Activate the virtual environment with: source $(VENV)/bin/activate"
 
 install:
 	$(PIP) install --upgrade pip
 	$(PIP) install -r requirements.txt
-
+	$(PIP) install -e .
 dirs:
 	mkdir -p /tmp/videomind/uploads /tmp/videomind/outputs
 	@echo "Runtime directories created at /tmp/videomind/uploads and /tmp/videomind/outputs"
