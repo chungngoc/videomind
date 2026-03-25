@@ -1,5 +1,8 @@
 # VideoMind - Video Summarization 🎬
 [![CI/CD](https://github.com/chungngoc/videomind/actions/workflows/ci_cd.yml/badge.svg)](https://github.com/chungngoc/videomind/actions/workflows/ci_cd.yml)
+![Python](https://img.shields.io/badge/python-3.11-blue)
+![Docker](https://img.shields.io/badge/docker-ready-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 Multimodal video summarizer that fuses **speech**, **visuals**, and **LLM reasoning**
 into a single structured summary.
@@ -17,32 +20,54 @@ Download a sample video to test:
 
 > Summarizing a 1-minute English video — Whisper transcription + CLIP visual analysis + LLaMA 3.2 fusion
 
+> **Live demo:** Deployed on AWS EC2 with Docker + Nginx.
+> Start the instance to access:
+> `http://EC2_IP/demo` (Gradio) · `http://EC2_IP/docs` (API)
+> 
 ## Architecture
 ```
-Video → Preprocessing → ┌─ Whisper (audio)
-                         └─ CLIP / BLIP-2 (frames)
-                                    ↓
-                           Multimodal fusion (LLM)
-                                    ↓
-                         Structured summary output
-                                    ↓
-                    ┌─ FastAPI (REST service)
-                    ├─ Gradio (demo UI)
-                    └─ MLflow + Docker (MLOps)
+┌─────────────────────────────────────────────────────────┐
+│                      VideoMind                          │
+│                                                         │
+│  Video Upload                                           │
+│       ↓                                                 │
+│  Preprocessing (OpenCV + ffmpeg)                        │
+│  ├── Frame extraction (1 frame/sec)                     │
+│  └── Audio extraction (16kHz wav)                       │
+│       ↓                    ↓                            │
+│  Whisper (ASR)        CLIP / BLIP-2                     │
+│  Transcription        Frame analysis                    │
+│       ↓                    ↓                            │
+│       └────────┬───────────┘                            │
+│                ↓                                        │
+│         LLM Fusion (LLaMA 3.2)                          │
+│         Structured summary                              │
+│                ↓                                        │
+│  ┌─────────────┴──────────────┐                         │
+│  FastAPI (REST)         Gradio (UI)                     │
+│  └─────────────┬──────────────┘                         │
+│                ↓                                        │
+│         MLflow tracking                                 │
+│         Docker + Nginx                                  │
+│         AWS EC2                                         │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ## Tech Stack
 
 | Layer | Tool | Purpose |
 |---|---|---|
-| Frame analysis | CLIP / BLIP-2 | Visual understanding |
-| Transcription | OpenAI Whisper | Speech to text |
-| Summarization | LLaMA 3.2 / GPT-4o | Multimodal fusion |
-| API | FastAPI | REST service |
-| Demo | Gradio | Interactive UI |
-| Experiment tracking | MLflow | Run history + metrics |
-| Containerization | Docker | Reproducible deployment |
-| CI/CD | GitHub Actions | Automated testing |
+| Speech | OpenAI Whisper | Audio transcription with timestamps |
+| Vision | CLIP / BLIP-2 | Frame understanding and captioning |
+| Fusion | LLaMA 3.2 / GPT-4o | Multimodal summarization |
+| API | FastAPI | Production REST service |
+| Demo | Gradio | Interactive web UI |
+| Tracking | MLflow | Experiment tracking and artifacts |
+| Container | Docker + Compose | Reproducible deployment |
+| CI/CD | GitHub Actions | Automated testing and image build |
+| Registry | GitHub GHCR | Docker image storage |
+| Cloud | AWS EC2 | Production deployment |
+| Proxy | Nginx | Reverse proxy, routing |
 
 ## Quickstart
 
@@ -50,6 +75,7 @@ Video → Preprocessing → ┌─ Whisper (audio)
 - Python 3.10+
 - ffmpeg (`sudo apt-get install ffmpeg`)
 - Ollama (`curl -fsSL https://ollama.com/install.sh | sh`)
+- Docker (optional)
 
 ### Setup
 ```bash
@@ -83,7 +109,31 @@ make gradio        # → http://localhost:7860
 make mlflow        # → http://localhost:5000
 
 ```
+### Docker
+```bash
+# Development (builds locally)
+make compose-up
 
+# Production (pulls from GHCR)
+docker compose -f docker-compose.prod.yml up -d
+```
+---
+## CI/CD Pipeline
+```
+git push
+    ↓
+GitHub Actions
+    ├── Install dependencies
+    ├── Lint (ruff)
+    ├── Run tests (pytest)
+    └── Build + push Docker image → ghcr.io
+
+EC2 Deployment
+    ├── Pull new image from GHCR
+    ├── Restart containers
+    └── Nginx routes traffic
+```
+---
 ## Project Structure
 ```
 ├── app/
@@ -109,8 +159,11 @@ make mlflow        # → http://localhost:5000
 ├── tests/                     # Pytest suite
 ├── docs/
 │   └── demo.png               # Demo screenshot
-├── .github/workflows/         # CI/CD (coming soon)
-├── Makefile                   # Dev commands
+├── .github/workflows/         # CI/CD
+├── docker-compose.yml         # Dev stack
+├── docker-compose.prod.yml    # Production stack
+├── Dockerfile                 # Container recipe
+└── Makefile                   # Dev commands
 ├── requirements.txt
 └── setup.py
 ```
@@ -143,3 +196,23 @@ Tracked per run:
 - **Params** — model config (whisper size, LLM provider, use_blip)
 - **Metrics** — processing time, word count, segments, key moments
 - **Artifacts** — full summary JSON
+---
+## Deployment
+
+Deployed on **AWS EC2** (Ubuntu 22.04) with:
+
+- Docker Compose orchestrating 3 containers
+- Nginx as reverse proxy
+- GitHub Actions for automated deployment
+```
+Internet → Nginx (port 80)
+               ├── /          → FastAPI (8000)
+               ├── /demo/     → Gradio (7860)
+               └── /mlflow/   → MLflow (5000)
+```
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE)
