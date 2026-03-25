@@ -1,0 +1,61 @@
+services:
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: videomind-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+  api:
+    image: ghcr.io/YOUR_GITHUB_USERNAME/videomind:latest
+    container_name: videomind-api
+    pull_policy: always                    # ← always pull latest image
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=production
+      - LLM_PROVIDER=ollama
+      - LLM_MODEL=llama3.2:1b
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WHISPER_MODEL_SIZE=base
+    volumes:
+      - ./data:/tmp/videomind
+      - ./mlruns:/app/mlruns
+    depends_on:
+      ollama:
+        condition: service_started
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  gradio:
+    image: ghcr.io/YOUR_GITHUB_USERNAME/videomind:latest
+    container_name: videomind-gradio
+    pull_policy: always                    # ← always pull latest image
+    ports:
+      - "7860:7860"
+    environment:
+      - APP_ENV=production
+      - LLM_PROVIDER=ollama
+      - LLM_MODEL=llama3.2:1b
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WHISPER_MODEL_SIZE=base
+    volumes:
+      - ./data:/tmp/videomind
+      - ./mlruns:/app/mlruns
+    depends_on:
+      ollama:
+        condition: service_started
+    restart: unless-stopped
+    command: python gradio_demo/app.py
+
+volumes:
+  ollama_data:
